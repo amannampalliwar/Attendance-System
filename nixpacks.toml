@@ -1,0 +1,13 @@
+[phases.setup]
+cmds = [
+    "apt-get update",
+    "apt-get install -y cmake build-essential libopenblas-dev liblapack-dev libx11-6 libgtk-3-0 libboost-all-dev"
+]
+
+[phases.install]
+cmds = [
+    "pip install -r requirements.txt"
+]
+
+[start]
+cmd = "python app.py"
