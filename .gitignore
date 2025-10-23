@@ -1,3 +1,5 @@
+# Add these lines to your existing .gitignore
+attendance_env/
 __pycache__/
 *.pyc
 *.pyo
@@ -13,3 +15,8 @@ venv/
 *.xlsx
 static/uploads/*
 !static/uploads/.gitkeep
+
+# Face recognition models
+face_recognition_models/
+models/
+*.dat
