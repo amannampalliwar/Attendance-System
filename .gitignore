@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.npy
+*.db
+*.xlsx
+static/uploads/*
+!static/uploads/.gitkeep

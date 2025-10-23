@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mark Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tab-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">← Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>📷 Mark Attendance</h2>
+        <p>Choose your preferred method to mark attendance.</p>
+        
+        <!-- Tabs for different attendance methods -->
+        <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab">
+                    📸 Use Camera
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+                    📁 Upload Photo
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="attendanceTabsContent">
+            <!-- Camera Tab -->
+            <div class="tab-pane fade show active" id="camera" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Camera Capture</h5>
+                                <p class="card-text">Position your face in the camera and click Capture to mark attendance.</p>
+                                
+                                <video id="video" width="100%" autoplay></video>
+                                <canvas id="canvas" style="display:none;"></canvas>
+                                
+                                <div class="mt-3">
+                                    <button id="capture" class="btn btn-primary">Capture Photo</button>
+                                    <button id="retake" class="btn btn-secondary" style="display:none;">Retake</button>
+                                </div>
+                                
+                                <div id="preview" class="mt-3" style="display:none;">
+                                    <img id="photo" width="100%">
+                                    <form id="attendanceForm" method="POST" action="/process-attendance">
+                                        <input type="hidden" name="imageData" id="imageData">
+                                        <button type="submit" class="btn btn-success mt-2">Mark Attendance</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Photo Tab -->
+            <div class="tab-pane fade" id="upload" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Upload Photo</h5>
+                                <p class="card-text">Upload a photo containing faces to mark attendance.</p>
+                                
+                                <form method="POST" action="/process-upload-attendance" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="photoUpload" class="form-label">Select Photo</label>
+                                        <input type="file" class="form-control" id="photoUpload" name="photo" accept="image/*" required>
+                                        <div class="form-text">
+                                            Upload a clear photo with visible faces. Supported formats: JPG, PNG, JPEG.
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="uploadPreview" class="mb-3" style="display:none;">
+                                        <h6>Preview:</h6>
+                                        <img id="uploadedPhoto" width="100%" style="max-height: 300px; object-fit: contain;">
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-success">Mark Attendance from Photo</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Camera functionality
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const captureBtn = document.getElementById('capture');
+        const retakeBtn = document.getElementById('retake');
+        const preview = document.getElementById('preview');
+        const photo = document.getElementById('photo');
+        const imageData = document.getElementById('imageData');
+
+        // Access camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing camera:", err);
+                alert("Error accessing camera. Please ensure you've given camera permissions.");
+            });
+
+        captureBtn.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const dataURL = canvas.toDataURL('image/jpeg');
+            photo.src = dataURL;
+            imageData.value = dataURL;
+            
+            preview.style.display = 'block';
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            preview.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            retakeBtn.style.display = 'none';
+        });
+
+        // Upload photo preview functionality
+        const photoUpload = document.getElementById('photoUpload');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const uploadedPhoto = document.getElementById('uploadedPhoto');
+
+        photoUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedPhoto.src = e.target.result;
+                    uploadPreview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                uploadPreview.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
